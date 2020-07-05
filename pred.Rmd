@@ -1,0 +1,81 @@
+---
+title: 'Peer-graded Assignment'
+author: "swathy"
+date: "5/7/2020"
+output: html_document
+---
+
+## Loading the libraries
+
+```{r libraries}
+library(caret)
+library(randomForest)
+library(rpart)
+```
+
+## Loading the data
+
+### Cross Validation(https://en.wikipedia.org/wiki/Cross-validation_(statistics))
+I am going to partition the data(pml-training.csv) into training and testing by a factor of p<-0.65. I will then use the final prediction model of the testing dataset(pml-testing.csv)
+
+```{r loading_data}
+set.seed(12321)
+data_training = read.csv(url('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv'),na.strings=c("NA", ""))
+data_testing = read.csv(url('https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv'),na.strings=c("NA", ""))
+data_partition <- createDataPartition(data_training$classe, p=0.65, list=FALSE)
+intrain <- data_training[data_partition,]
+intest <- data_training[-data_partition,]
+```
+
+## Cleaning the data
+
+```{r removing_NA}
+intrain<-intrain[,colSums(is.na(intrain)) == 0]
+intest <-intest[,colSums(is.na(intest)) == 0]
+```
+
+at this point we might want to remove all variables corresponding to first 7 variables, since they are not so important to the prediction
+
+```{r removing_variables}
+intrain<-intrain[,8:dim(intrain)[2]]
+intest <-intest[,8:dim(intest)[2]]
+```
+
+## Predict using random forest
+
+```{r predict_random_forest}
+model_rf <- randomForest(classe ~. , data=intrain)
+prediction_rf <- predict(model_rf, intest)
+confusionMatrix(prediction_rf, intest$classe)
+```
+
+## Predict using Decision Trees
+
+```{r predict_decision_trees}
+model_dt <- rpart(classe ~. , data=intrain, method="class")
+prediction_dt <- predict(model_dt, intest, type = "class")
+confusionMatrix(prediction_dt, intest$classe)
+```
+
+## Conclusion of prediction
+
+We see the accuracy of using Random Forest is better, as compared to decision trees. Hence we are going to use random forest to predict on the testing data.
+
+```{r model}
+model_rf
+```
+
+
+# Submission
+
+```{r predict_final_testing_data}
+prediction_dt <- predict(model_rf, data_testing)
+prediction_dt
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
